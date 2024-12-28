@@ -1,0 +1,9 @@
+[package]
+name = "flight_3"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.30.0"
+egui = "0.30.0"
+egui_extras = "0.30.0"
