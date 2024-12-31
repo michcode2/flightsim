@@ -5,8 +5,9 @@ mod aircraft;
 mod displays;
 
 use std::{fs::OpenOptions, io::Write};
+use chrono::Utc;
 
-use displays::Dial;
+use displays::{Dial, Gauge};
 use eframe::egui;
 
 fn main() {
@@ -26,7 +27,10 @@ struct App{
     camera: camera::Camera,
     aircraft: aircraft::Aircraft,
     logger: std::fs::File,
-    test_dial: displays::Dial,
+    velocity_dial: displays::Dial,
+    altitude_dial: displays::Dial,
+    climb_rate_dial: displays::Dial,
+    throttle_gauge: displays::Gauge,
 }
 
 impl Default for App {
@@ -35,25 +39,31 @@ impl Default for App {
             camera: camera::Camera::new(),
             aircraft: aircraft::Aircraft::new(),
             logger: std::fs::File::open("thing").unwrap(),
-            test_dial: displays::Dial::test(),
+            velocity_dial: displays::Dial::test(),
+            altitude_dial: displays::Dial::test(),
+            climb_rate_dial: displays::Dial::test(),
+            throttle_gauge: displays::Gauge::test(),
         }
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-
-        let dt = 0.05;
-
+        let time_start = Utc::now();
+        let dt = 1.0/30.0; // time to render in seconds
         self.run_physics(dt);
         egui::CentralPanel::default().show(ctx, |ui| {
             let _ = ctx.input(|state|{
                 for key_code in state.keys_down.clone() {
                     match key_code {
-                        egui::Key::W => self.aircraft.state.pointing.altitude += -1.0,
-                        egui::Key::S => self.aircraft.state.pointing.altitude += 1.0,
-                        egui::Key::E => self.aircraft.state.pointing.roll += 1.0,
-                        egui::Key::Q => self.aircraft.state.pointing.roll += -1.0,
+                        egui::Key::W => self.aircraft.pitch_by(-1.0),
+                        egui::Key::S => self.aircraft.pitch_by(1.0),
+                        egui::Key::K => self.aircraft.state.pointing_global.altitude += 0.1,
+                        egui::Key::I => self.aircraft.state.pointing_global.altitude += -0.1,
+                        egui::Key::Q => self.aircraft.state.pointing_global.roll += 1.0,
+                        egui::Key::E => self.aircraft.state.pointing_global.roll += -1.0,
+                        egui::Key::A => self.aircraft.yaw_by(1.0),
+                        egui::Key::D => self.aircraft.yaw_by(-1.0),
                         egui::Key::Z => self.aircraft.increase_throttle(),
                         egui::Key::X => self.aircraft.decrease_throttle(),
                         _ => (),
@@ -61,8 +71,17 @@ impl eframe::App for App {
                 }
             });
             ui.horizontal(|ui| {
-                ui.add(egui::Image::from_texture(&ctx.load_texture("siulator",self.camera.render(), Default::default())));
-                ui.vertical(|ui|{
+                ui.vertical( |ui| {
+                    ui.add(egui::Image::from_texture(&ctx.load_texture("siulator",self.camera.render(), Default::default())));
+                    ui.horizontal(|ui| {
+                        self.velocity_dial.draw(ui, self.aircraft.state.velocity.magnitude());
+                        self.altitude_dial.draw(ui, self.aircraft.state.position.z);
+                        self.climb_rate_dial.draw(ui, self.aircraft.state.velocity.z);
+                        self.throttle_gauge.draw(ui, self.aircraft.throttle_percent);
+                    });
+                });
+                ui.label(format!("roll: {}", self.aircraft.state.pointing_global.roll));
+                /*ui.vertical(|ui|{
                     ui.label("velocity:    ");
                     ui.label("altitude:    ");
                     ui.label("throttle:    ");
@@ -75,37 +94,45 @@ impl eframe::App for App {
                     ui.label(format!("{:.2}", self.aircraft.state.velocity.magnitude()));
                     ui.label(format!("{:.2}", self.aircraft.state.position.z));
                     ui.label(format!("{:.1}", self.aircraft.throttle_percent));
-                    ui.label(format!("{:.2}", self.aircraft.state.pointing.altitude));
-                    ui.label(format!("{:.2}", self.aircraft.state.pointing.roll));
-                    ui.label(format!("{:.1}", self.aircraft.state.pointing.as_vec3().angle_with(&self.aircraft.state.velocity) * 57.3));
+                    ui.label(format!("{:.2}", self.aircraft.state.pointing_global.altitude));
+                    ui.label(format!("{:.2}", self.aircraft.state.pointing_global.roll));
+                    ui.label(format!("{:.1}", self.aircraft.state.pointing_global.as_vec3().angle_with(&self.aircraft.state.velocity) * 57.3));
                     ui.label(format!("{:.3}", self.aircraft.state.velocity.z));
-                });
-                ui.vertical(|ui| {
-                    self.test_dial.draw(ui, self.aircraft.state.velocity.magnitude());
-                });
+                }); */
             });
         });
         self.logger.write(self.aircraft.state.log().as_bytes()).unwrap();
-        self.logger.write(b",\n");
-        std::thread::sleep(std::time::Duration::from_millis((dt*1000.0) as u64));
+        self.logger.write(b",\n").unwrap();
         ctx.request_repaint();
+        let time_end = Utc::now();
+        let dt_actual = time_end - time_start;
+        //println!("{:?}", (time_end - time_start).num_milliseconds());
+        if let Some(time) = ((dt * 1e9) as u64).checked_sub(dt_actual.num_nanoseconds().unwrap() as u64) {
+            std::thread::sleep(std::time::Duration::from_nanos(time));
+        }
     }
 }
 
 impl App {
     fn run_physics(&mut self, dt: f64) {
         self.aircraft.do_step(dt);
-        self.camera.euler = self.aircraft.state.pointing;
+        self.camera.euler = self.aircraft.state.pointing_global;
         self.camera.position = self.aircraft.state.position;
     }
     
     fn with_file(file: std::fs::File) -> App {
-        let test_dial = Dial::new("vel".to_string(), String::new(), 50.0, 0.0);
+        let velocity_dial = Dial::new("vel".to_string(), "m/s".to_string(), 80.0, 0.0);
+        let altitude_dial = Dial::new("alt".to_string(), "m".to_string(), 400.0, 0.0);
+        let climb_rate_dial = Dial::new("v_z".to_string(), "m/s".to_string(), -10.0, 10.0);
+        let throttle_gauge = Gauge::new("throttle".to_string(), "%".to_string() , 1.0, 0.0);
         App{
             camera: camera::Camera::new(),
-            aircraft: aircraft::Aircraft::new(),
+            aircraft: aircraft::Aircraft::flying(),
             logger: file,
-            test_dial,
+            velocity_dial,
+            altitude_dial,
+            climb_rate_dial,
+            throttle_gauge,
         }
     }
 }

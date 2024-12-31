@@ -159,6 +159,10 @@ impl PartialEq for Vec3 {
     }
 }
 
+pub fn rad_to_deg(radians: f64) -> f64 {
+    radians * 180.0 / std::f64::consts::PI
+}
+
 pub fn deg_to_rad(degrees: f64) -> f64 {
     degrees * std::f64::consts::PI / 180.0  
 }
@@ -255,6 +259,16 @@ mod test{
         assert!((answer_7.y - check_7.y).abs() < 1e-10);
         assert!((answer_7.z - check_7.z).abs() < 1e-10);
         assert!((answer_7.magnitude() - 1.0).abs() < 1e-10);
+
+        // case 8
+        let test_transform_8 = Vec3::new(0.0, 0.0, 1.0);
+        let pointing_8 = Angles::new(0.0, 0.0, 90.0);
+        let answer_8 = Vec3::new(0.0, 1.0, 0.0); 
+        let check_8 = test_transform_8.transform_coordinates(&pointing_8);
+        assert!((answer_8.x - check_8.x).abs() < 1e-10);
+        assert!((answer_8.y - check_8.y).abs() < 1e-10);
+        assert!((answer_8.z - check_8.z).abs() < 1e-10);
+        assert!((answer_8.magnitude() - 1.0).abs() < 1e-10);
         //TODO extend test suite
     }
 

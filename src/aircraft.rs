@@ -1,5 +1,5 @@
 use crate::common_math;
-use crate::common_math::Vec3;
+use crate::common_math::{Vec3, deg_to_rad};
 use crate::state;
 
 pub struct Aircraft {
@@ -12,20 +12,41 @@ pub struct Aircraft {
 impl Aircraft {
     pub fn new() -> Aircraft {
         Aircraft {
-            state: state::State::new(),
+            state: state::State::runway(),
             throttle_percent: 0.0,
             mass: 1000.0,
-            max_thrust: 1750.0,
+            max_thrust: 600.0,
         }
     }
 
+    pub fn flying() -> Aircraft {
+        Aircraft {
+            state: state::State::flying(),
+            throttle_percent: 0.7,
+            mass: 1000.0,
+            max_thrust: 500.0,
+        }
+    }
+    
     pub fn do_step(&mut self, dt: f64) {
-        let mut next_acceleration = self.free_body_diagram().transform_coordinates(&self.state.pointing) * (1.0/self.mass);
+        // this also needs something for the combo roll and pitch to give yaw
+        let weight = self.mass * 9.81;
+        let weight_vector = Vec3::new(0.0, 0.0, -weight);
+
+        let self_forces = self.free_body_diagram().transform_coordinates(&self.state.pointing_global);
+        let mut next_acceleration = (self_forces + &weight_vector) * (1.0/self.mass);
+
         let mut next_velocity = self.state.velocity + &(next_acceleration * dt);
         let mut next_position = self.state.position + &(next_velocity * dt);
-        let next_pointing = self.state.pointing + &(self.state.angular_rate * dt);
+        let next_pointing_global = self.state.pointing_global + &(self.state.angular_rate * dt);
 
         if next_position.z <= 0.0 {
+            if self.state.velocity.z < -0.5 {
+                panic!("shit landing dumbass. {} meters per second", self.state.velocity.z);
+            }
+            if self.state.velocity.z < 0.0 {
+                println!("{} is acceptable", self.state.velocity.z);
+            }
             next_position.z = self.state.position.z.max(0.0);
             next_acceleration.z = self.state.acceleration.z.max(0.0);
             next_velocity.z = self.state.velocity.z.max(0.0);
@@ -34,7 +55,7 @@ impl Aircraft {
         self.state = state::State {
             position: next_position,
             velocity: next_velocity,
-            pointing: next_pointing,
+            pointing_global: next_pointing_global,
             acceleration: next_acceleration,
             angular_rate: self.state.angular_rate,
         }
@@ -52,36 +73,58 @@ impl Aircraft {
         }
 
 
-        let alpha = (common_math::deg_to_rad(self.state.pointing.altitude) - climb_angle) * 10.0;
+        //need a way to transform the lift/drag to account for sideslip
 
+        let velocity_scaled;
+
+        if let Some(unit) = self.state.velocity.unit_vector() {
+            velocity_scaled = unit.transform_coordinates(&self.state.pointing_global);
+        } else {
+            return thrust_vectors;
+        }
+
+        let alpha = (deg_to_rad(self.state.pointing_global.altitude) - climb_angle) * 6.0;
         let CL = 1.2_f64.min(alpha).max(-0.8);
         let lift = 0.5 * 1.225 * self.state.velocity.magnitude().powf(2.0) * 10.0 * CL;
-        let lift_vectors = Vec3::new(0.0, 0.0, lift);
+        let lift_vectors = Vec3::new(-lift * velocity_scaled.z, lift * velocity_scaled.y, lift * velocity_scaled.x);
 
-        let CD = CL.powf(2.0)/20.0 + 0.02;
-        let drag = 0.5*1.225 * self.state.velocity.magnitude().powf(2.0) * 10.0 * CD;
-        let drag_vectors = Vec3::new(-drag, 0.0, 0.0);
+        let CD = (alpha.powf(2.0)/(20.0)) + 0.01;
+        let drag = 0.5*1.225 * self.state.velocity.magnitude().powf(2.0) * 10.0 * CD * 0.3;
+        let drag_vectors = Vec3::new(-drag * velocity_scaled.x, -drag * velocity_scaled.y, -drag * velocity_scaled.z);
 
-
-        let weight = self.mass * 9.81;
         
-        let weight_vector = Vec3::new(0.0, 0.0, -weight);
-        
-        thrust_vectors + &drag_vectors + &lift_vectors + &weight_vector
+        let resultant = thrust_vectors + &drag_vectors + &lift_vectors;
+        resultant
     }
 
     pub fn increase_throttle(&mut self) {
-        self.throttle_percent += 0.1;
+        self.throttle_percent += 0.05;
         if self.throttle_percent > 1.0 {
             self.throttle_percent = 1.0;  
         }
     }
 
     pub fn decrease_throttle(&mut self) {
-        self.throttle_percent -= 0.1;
+        self.throttle_percent -= 0.05;
         if self.throttle_percent < 0.0 {
             self.throttle_percent = 0.0;  
         }
+    }
+
+    pub fn pitch_by(&mut self, amount: f64) {
+        let delta_pitch = amount * deg_to_rad(self.state.pointing_global.roll).cos();
+        let delta_yaw = amount * deg_to_rad(self.state.pointing_global.roll).sin();
+
+        self.state.pointing_global.altitude += delta_pitch;
+        self.state.pointing_global.azimouth += delta_yaw;
+    }
+
+    pub fn yaw_by(&mut self, amount: f64 ){
+        let delta_pitch = amount * deg_to_rad(self.state.pointing_global.roll).sin();
+        let delta_yaw = amount * deg_to_rad(self.state.pointing_global.roll).cos();
+
+        self.state.pointing_global.altitude += delta_pitch;
+        self.state.pointing_global.azimouth += delta_yaw;
     }
 
 }
