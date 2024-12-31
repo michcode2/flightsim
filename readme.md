@@ -2,11 +2,18 @@ i made a flight simulator!!
 the flight dynamics suck and idk how the performance will be on your computer but it works good for me
 ive only tested mac arm and mac x86 because im not at my PC
 
-"but natalie, my computer is linux/32 bit/linux 32 bit!!"
+"but natalie, my computer is arm/32 bit/32 bit arm!!"
 so what you need to do is install cargo from https://rust.sh and then cargo build --release and then it will work for you
 for linux users, you should know how to do this
 
-the stall speed of the plane is about 40m/s
+the plane is roughly modelled after a cessna 172S, with the main source being the pilots operating handbook. 
+ive got a uni report that gives me the details more thoroughly, if you want it then email me
+the stall speed of the plane is about $30m\ s^{-1}$, in line with the cessna
+the drag is dramatically lower than it should be, theres probably some wrong maths
+the dynamic response of the plane will also be incorrect, oops
+ive also done no calculations on how to approximate 180HP into the force of the planes engines
+theres no vertical stab on the plane too lol
+
 when you land the plane, if you land at more than -1m/s vertically, the program will quit and tell you that it landed too fast
 otherwise it will congradulate you
 

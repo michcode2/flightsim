@@ -14,7 +14,7 @@ impl Aircraft {
         Aircraft {
             state: state::State::runway(),
             throttle_percent: 0.0,
-            mass: 1000.0,
+            mass: 1156.0,
             max_thrust: 600.0,
         }
     }
@@ -24,7 +24,7 @@ impl Aircraft {
             state: state::State::flying(),
             throttle_percent: 0.7,
             mass: 1000.0,
-            max_thrust: 500.0,
+            max_thrust: 1000.0,
         }
     }
     
@@ -85,11 +85,11 @@ impl Aircraft {
 
         let alpha = (deg_to_rad(self.state.pointing_global.altitude) - climb_angle) * 6.0;
         let CL = 1.2_f64.min(alpha).max(-0.8);
-        let lift = 0.5 * 1.225 * self.state.velocity.magnitude().powf(2.0) * 10.0 * CL;
-        let lift_vectors = Vec3::new(-lift * velocity_scaled.z, lift * velocity_scaled.y, lift * velocity_scaled.x);
+        let lift = 0.5 * 1.225 * self.state.velocity.magnitude().powf(2.0) * 16.17 * CL;
+        let lift_vectors = Vec3::new(0.0, lift * velocity_scaled.y, lift * velocity_scaled.x);
 
-        let CD = (alpha.powf(2.0)/(20.0)) + 0.01;
-        let drag = 0.5*1.225 * self.state.velocity.magnitude().powf(2.0) * 10.0 * CD * 0.3;
+        let CD = (alpha.powf(2.0)/(std::f64::consts::PI * 7.0)) + 0.035;
+        let drag = 0.5*1.225 * self.state.velocity.magnitude().powf(2.0) * 16.17 * CD * 0.3;
         let drag_vectors = Vec3::new(-drag * velocity_scaled.x, -drag * velocity_scaled.y, -drag * velocity_scaled.z);
 
         
