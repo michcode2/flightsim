@@ -53,7 +53,7 @@ impl Vec3 {
 
             y:  self.x * deg_to_rad(pointing.altitude).cos() * deg_to_rad(pointing.azimouth).sin() + 
                 self.z * deg_to_rad(pointing.roll).sin() + 
-                self.y * deg_to_rad(pointing.azimouth).sin() * deg_to_rad(pointing.roll),
+                self.y * deg_to_rad(pointing.azimouth).cos() * deg_to_rad(pointing.roll).cos(),
                 
             z:  self.x * deg_to_rad(pointing.altitude).sin() +
                 self.y * deg_to_rad(pointing.roll).sin() + 
@@ -76,6 +76,11 @@ impl Vec3 {
     pub fn jsonify(&self) -> String {
         format!("{{\"x\": {}, \"y\": {}, \"z\": {}}}", self.x, self.y, self.z)
     }
+
+    pub fn angle_with_horizon(&self) -> f64 {
+        let horizontal = (self.x.powf(2.0) + self.y.powf(2.0)).powf(0.5);
+        self.z.atan2(horizontal)
+    }
 }
 
 impl Angles {
@@ -87,6 +92,7 @@ impl Angles {
         }
     }
     
+    #[allow(dead_code)]
     pub fn as_vec3(&self) -> Vec3 {
         let x_azimouth = deg_to_rad(self.azimouth).cos();
         let x_altitude = x_azimouth * deg_to_rad(self.altitude).cos();
@@ -159,6 +165,7 @@ impl PartialEq for Vec3 {
     }
 }
 
+#[allow(dead_code)]
 pub fn rad_to_deg(radians: f64) -> f64 {
     radians * 180.0 / std::f64::consts::PI
 }

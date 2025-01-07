@@ -9,6 +9,7 @@ pub struct State {
 }
 
 impl State {
+    #[allow(dead_code)]
     pub fn new() -> State {
         State {
             pointing_global: common_math::Angles::new(0.0,0.0,0.0),

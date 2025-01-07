@@ -50,29 +50,29 @@ impl Default for App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let time_start = Utc::now();
-        let dt = 1.0/30.0; // time to render in seconds
+        let dt = 1.0/50.0; // time to render in seconds
         self.run_physics(dt);
         egui::CentralPanel::default().show(ctx, |ui| {
             let _ = ctx.input(|state|{
                 for key_code in state.keys_down.clone() {
                     match key_code {
-                        egui::Key::W => self.aircraft.pitch_by(-1.0),
-                        egui::Key::S => self.aircraft.pitch_by(1.0),
-                        egui::Key::K => self.aircraft.state.pointing_global.altitude += 0.1,
-                        egui::Key::I => self.aircraft.state.pointing_global.altitude += -0.1,
+                        egui::Key::W => self.aircraft.pitch_by(-20.0 * dt),
+                        egui::Key::S => self.aircraft.pitch_by(20.0 * dt),
+                        egui::Key::K => self.aircraft.pitch_by(1.0 * dt),
+                        egui::Key::I => self.aircraft.pitch_by(-1.0 * dt),
                         egui::Key::Q => self.aircraft.state.pointing_global.roll += 1.0,
                         egui::Key::E => self.aircraft.state.pointing_global.roll += -1.0,
-                        egui::Key::A => self.aircraft.yaw_by(1.0),
-                        egui::Key::D => self.aircraft.yaw_by(-1.0),
-                        egui::Key::Z => self.aircraft.increase_throttle(),
-                        egui::Key::X => self.aircraft.decrease_throttle(),
+                        egui::Key::A => self.aircraft.yaw_by(10.0 * dt),
+                        egui::Key::D => self.aircraft.yaw_by(-10.0 * dt),
+                        egui::Key::Z => self.aircraft.throttle_by(5.0 * dt),
+                        egui::Key::X => self.aircraft.throttle_by(-5.0 * dt),
                         _ => (),
                     }
                 }
             });
             ui.horizontal(|ui| {
                 ui.vertical( |ui| {
-                    ui.add(egui::Image::from_texture(&ctx.load_texture("siulator",self.camera.render(), Default::default())));
+                    ui.add(egui::Image::from_texture(&ctx.load_texture("siulator",self.camera.render(self.aircraft.state.velocity.angle_with_horizon(), 0.0), Default::default())));
                     ui.horizontal(|ui| {
                         self.velocity_dial.draw(ui, self.aircraft.state.velocity.magnitude());
                         self.altitude_dial.draw(ui, self.aircraft.state.position.z);
@@ -80,7 +80,7 @@ impl eframe::App for App {
                         self.throttle_gauge.draw(ui, self.aircraft.throttle_percent);
                     });
                 });
-                ui.label(format!("roll: {}", self.aircraft.state.pointing_global.roll));
+                ui.label(format!("alpha: {}", common_math::rad_to_deg(self.aircraft.get_alpha())));
                 /*ui.vertical(|ui|{
                     ui.label("velocity:    ");
                     ui.label("altitude:    ");
@@ -109,6 +109,8 @@ impl eframe::App for App {
         //println!("{:?}", (time_end - time_start).num_milliseconds());
         if let Some(time) = ((dt * 1e9) as u64).checked_sub(dt_actual.num_nanoseconds().unwrap() as u64) {
             std::thread::sleep(std::time::Duration::from_nanos(time));
+        } else {
+            println!("frame took too long to render!");
         }
     }
 }
