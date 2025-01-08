@@ -31,11 +31,11 @@ impl Camera {
             for y in 0..width {
                 let yaw_deg = (y as f64 * dyaw) - (dyaw * width as f64 * 0.5) + self.euler.azimouth;
                 let mut pixel_yaw = deg_to_rad(yaw_deg);
-                let roll_offset_yaw = deg_to_rad(-self.euler.roll).acos();
+                let roll_offset_yaw = deg_to_rad(-self.euler.roll) * pixel_yaw.acos();
                 //pixel_yaw += roll_offset_yaw;
                 
                 let pitch_deg = (x as f64 * dpitch) + 20.0 + self.euler.altitude;
-                let roll_offset_pitch = deg_to_rad(-self.euler.roll) * pixel_yaw.sin();
+                let roll_offset_pitch = deg_to_rad(-self.euler.roll) * pixel_yaw.asin();
                 let mut pixel_pitch = deg_to_rad(pitch_deg);
                 pixel_pitch += roll_offset_pitch;
 
@@ -72,12 +72,20 @@ impl Camera {
                     colours[2] = 200;
                 }
                 
-                if (pixel_pitch - aircraft_pitch).abs() < deg_to_rad(0.5) && (pixel_pitch - aircraft_pitch).abs() > deg_to_rad(0.2) && (pixel_yaw - aircraft_yaw).abs() < deg_to_rad(0.5) && (pixel_yaw - aircraft_yaw).abs() > deg_to_rad(0.2) {
-                    colours[0] = 255;
-                    colours[1] = 0;
+                if (pixel_pitch - aircraft_pitch).abs() < deg_to_rad(0.1) {
+                    colours[0] = 0;
+                    colours[1] = 255;
                     colours[2] = 0;
                 }
     
+                if (pixel_yaw - aircraft_yaw).abs() < deg_to_rad(0.1) {
+                    colours[0] = 0;
+                    colours[1] = 255;
+                    colours[2] = 0;
+                }
+
+
+
                 imagebuffer.push(colours[0]);
                 imagebuffer.push(colours[1]);
                 imagebuffer.push(colours[2]);
