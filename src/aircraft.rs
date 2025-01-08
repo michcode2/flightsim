@@ -43,7 +43,7 @@ impl Aircraft {
         let next_pointing_global = self.state.pointing_global + &(self.state.angular_rate * dt);
 
         if next_position.z <= 0.0 {
-            if self.state.velocity.z < -5. {
+            if self.state.velocity.z < -1. {
                 panic!("shit landing dumbass. {} meters per second", self.state.velocity.z);
             }
             if self.state.velocity.z < 0.0 {

@@ -3,6 +3,7 @@ mod common_math;
 mod state;
 mod aircraft;
 mod displays;
+mod wing;
 
 use std::{fs::OpenOptions, io::Write};
 use chrono::Utc;
@@ -64,8 +65,8 @@ impl eframe::App for App {
                         egui::Key::E => self.aircraft.state.pointing_global.roll += -1.0,
                         egui::Key::A => self.aircraft.yaw_by(10.0 * dt),
                         egui::Key::D => self.aircraft.yaw_by(-10.0 * dt),
-                        egui::Key::Z => self.aircraft.throttle_by(5.0 * dt),
-                        egui::Key::X => self.aircraft.throttle_by(-5.0 * dt),
+                        egui::Key::Z => self.aircraft.throttle_by(2.5 * dt),
+                        egui::Key::X => self.aircraft.throttle_by(-2.5 * dt),
                         _ => (),
                     }
                 }
