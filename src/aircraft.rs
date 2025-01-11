@@ -30,6 +30,16 @@ impl Aircraft {
         }
     }
     
+    pub fn flying_high() -> Aircraft {
+        Aircraft {
+            state: state::State::flying_high(),
+            throttle_percent: 0.7,
+            mass: 1000.0,
+            max_power: 120e3,
+            area: 16.17,
+        }
+    }
+
     pub fn do_step(&mut self, dt: f64) {
         // this also needs something for the combo roll and pitch to give yaw
         let weight = self.mass * 9.81;

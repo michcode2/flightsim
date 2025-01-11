@@ -29,6 +29,16 @@ impl State {
             acceleration: common_math::Vec3::new(0.0,0.0,0.0),
         }
     }
+
+    pub fn flying_high() -> State {
+        State {
+            pointing_global: common_math::Angles::new(0.0,6.0,0.0),
+            angular_rate: common_math::Angles::new(0.0,0.0,0.0),
+            position: common_math::Vec3::new(0.0,0.0,1000.0),
+            velocity: common_math::Vec3::new(40.0,0.0,0.0),
+            acceleration: common_math::Vec3::new(0.0,0.0,0.0),
+        }
+    }
     
     pub fn runway() -> State {
         State {

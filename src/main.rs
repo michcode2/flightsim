@@ -80,7 +80,7 @@ impl eframe::App for App {
                         self.throttle_gauge.draw(ui, self.aircraft.throttle_percent);
                     });
                 });
-                ui.label(format!("alpha: {}", common_math::rad_to_deg(self.aircraft.get_alpha())));
+                ui.label(format!("roll: {}", self.aircraft.state.pointing_global.roll));
                 /*ui.vertical(|ui|{
                     ui.label("velocity:    ");
                     ui.label("altitude:    ");
@@ -129,7 +129,7 @@ impl App {
         let throttle_gauge = Gauge::new("throttle".to_string(), "%".to_string() , 1.0, 0.0);
         App{
             camera: camera::Camera::new(),
-            aircraft: aircraft::Aircraft::flying(),
+            aircraft: aircraft::Aircraft::flying_high(),
             logger: file,
             velocity_dial,
             altitude_dial,

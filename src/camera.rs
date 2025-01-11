@@ -18,26 +18,33 @@ impl Camera {
     pub fn render(&mut self, aircraft_pitch: f64, aircraft_yaw: f64) -> egui::ColorImage {
         let width = 500;
         let height = 300;
+
+        //let width = 500/10;
+        //let height = 300/10;
+
         let mut imagebuffer  = Vec::with_capacity(4 * (width + 1) * (height + 1));
 
-        let delta_angle = -2.0/15.0;
+        let delta_angle = deg_to_rad(-2.0/15.0);
 
         let dpitch = delta_angle;
         let dyaw = delta_angle;
 
         let z = self.position.z + 1.0;
 
-        for x in 0..height {
-            for y in 0..width {
-                let yaw_deg = (y as f64 * dyaw) - (dyaw * width as f64 * 0.5) + self.euler.azimouth;
-                let mut pixel_yaw = deg_to_rad(yaw_deg);
-                let roll_offset_yaw = deg_to_rad(-self.euler.roll) * pixel_yaw.acos();
-                //pixel_yaw += roll_offset_yaw;
-                
-                let pitch_deg = (x as f64 * dpitch) + 20.0 + self.euler.altitude;
-                let roll_offset_pitch = deg_to_rad(-self.euler.roll) * pixel_yaw.asin();
-                let mut pixel_pitch = deg_to_rad(pitch_deg);
-                pixel_pitch += roll_offset_pitch;
+        for y in 0..height {
+            for x in 0..width {
+
+                let y_offset = y as f64 - (height as f64 / 2.0);
+                let x_offset = x as f64 - (width as f64 / 2.0);
+                let _theta = deg_to_rad(x_offset).atan2(deg_to_rad(y_offset));
+
+                let sensor_pitch = y_offset * dpitch; // radians
+                let sensor_yaw = x_offset * dyaw;
+
+                let pitch_offset = -sensor_yaw * deg_to_rad(self.euler.roll).tan();
+
+                let pixel_pitch = (sensor_pitch) + deg_to_rad(self.euler.altitude) + pitch_offset;
+                let pixel_yaw= (sensor_yaw) + deg_to_rad(self.euler.azimouth);
 
                 let mut colours = vec![0,0,0];
                 
