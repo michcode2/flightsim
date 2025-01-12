@@ -1,5 +1,6 @@
 use crate::common_math::{Vec3, deg_to_rad, rad_to_deg};
 use crate::state;
+use crate::wing;
 
 pub struct Aircraft {
     pub state: state::State,
@@ -7,6 +8,7 @@ pub struct Aircraft {
     mass: f64,
     max_power: f64,
     area: f64,
+    wings: Vec<wing::Wing>,
 }
 
 impl Aircraft {
@@ -17,9 +19,11 @@ impl Aircraft {
             mass: 1156.0,
             max_power: 120e3,
             area: 16.17,
+            wings: vec!(),
         }
     }
 
+    #[allow(dead_code)]
     pub fn flying() -> Aircraft {
         Aircraft {
             state: state::State::flying(),
@@ -27,6 +31,7 @@ impl Aircraft {
             mass: 1000.0,
             max_power: 120e3,
             area: 16.17,
+            wings: vec!(),
         }
     }
     
@@ -37,6 +42,7 @@ impl Aircraft {
             mass: 1000.0,
             max_power: 120e3,
             area: 16.17,
+            wings: vec!(),
         }
     }
 
@@ -53,7 +59,7 @@ impl Aircraft {
         let next_pointing_global = self.state.pointing_global + &(self.state.angular_rate * dt);
 
         if next_position.z <= 0.0 {
-            if self.state.velocity.z < -5. {
+            if self.state.velocity.z < -0.5 {
                 panic!("shit landing dumbass. {} meters per second", self.state.velocity.z);
             }
             if self.state.velocity.z < 0.0 {
@@ -129,6 +135,7 @@ impl Aircraft {
         deg_to_rad(self.state.pointing_global.altitude) - climb_rate 
     }
 
+    #[allow(unused)]
     pub fn get_sideslip(&self) -> f64 {
         0.0
     }
@@ -159,6 +166,7 @@ mod test {
             mass: 1156.0,
             max_power: 120e3,
             area: 16.17,
+            wings: vec!(),
         };
         for a in 0..90 {
 
@@ -196,6 +204,7 @@ mod test {
             mass: 10.0,
             max_power: 1.0,
             area: 1.0,
+            wings: vec!(),
         };
         let target = -0.1_f64.atan();
         let answer = plane.get_alpha();

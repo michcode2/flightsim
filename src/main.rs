@@ -3,6 +3,7 @@ mod common_math;
 mod state;
 mod aircraft;
 mod displays;
+mod wing;
 
 use std::{fs::OpenOptions, io::Write};
 use chrono::Utc;
@@ -51,7 +52,10 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let time_start = Utc::now();
         let dt = 1.0/50.0; // time to render in seconds
-        self.run_physics(dt);
+        self.run_physics(dt/4.0);
+        self.run_physics(dt/4.0);
+        self.run_physics(dt/4.0);
+        self.run_physics(dt/4.0);
         egui::CentralPanel::default().show(ctx, |ui| {
             let _ = ctx.input(|state|{
                 for key_code in state.keys_down.clone() {

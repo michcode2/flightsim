@@ -61,10 +61,12 @@ impl Vec3 {
         }
     }
 
+    #[allow(dead_code)]
     pub fn dot_product(&self, other: &Vec3) -> f64 {
         return (self.x * other.x) + (self.y * other.y) + (self.z * other.z);
     }
 
+    #[allow(dead_code)]
     pub fn angle_with(&self, other: &Vec3) -> f64 {
         let fraction = self.dot_product(other) / (self.magnitude() * other.magnitude());
         if fraction.is_nan(){
@@ -110,6 +112,13 @@ impl Angles {
     
     pub fn jsonify(&self) -> String {
         format!("{{\"alt\": {}, \"az\": {}, \"roll\": {}}}", self.altitude, self.azimouth, self.roll)
+    }
+}
+
+impl std::ops::Add<Vec3> for Vec3 {
+    type Output = Vec3;
+    fn add(self, other: Vec3) -> Vec3 {
+        self + &other
     }
 }
 

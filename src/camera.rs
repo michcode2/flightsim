@@ -36,7 +36,6 @@ impl Camera {
 
                 let y_offset = y as f64 - (height as f64 / 2.0);
                 let x_offset = x as f64 - (width as f64 / 2.0);
-                let _theta = deg_to_rad(x_offset).atan2(deg_to_rad(y_offset));
 
                 let sensor_pitch = y_offset * dpitch; // radians
                 let sensor_yaw = x_offset * dyaw;
@@ -79,19 +78,13 @@ impl Camera {
                     colours[2] = 200;
                 }
                 
-                if (pixel_pitch - aircraft_pitch).abs() < deg_to_rad(0.1) {
-                    colours[0] = 0;
-                    colours[1] = 255;
-                    colours[2] = 0;
-                }
+                let r = ((pixel_yaw - aircraft_yaw).powi(2)  + (pixel_pitch - aircraft_pitch).powi(2)).powf(0.5);
     
-                if (pixel_yaw - aircraft_yaw).abs() < deg_to_rad(0.1) {
-                    colours[0] = 0;
-                    colours[1] = 255;
+                if r < deg_to_rad(0.5) {
+                    colours[0] = 255;
+                    colours[1] = 0;
                     colours[2] = 0;
                 }
-
-
 
                 imagebuffer.push(colours[0]);
                 imagebuffer.push(colours[1]);
